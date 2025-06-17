@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Interactivo de Distribuciones de Probabilidad</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            padding-top: 2rem; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        .container { 
+            background-color: #fff; 
+            border-radius: 10px; 
+            padding: 2rem; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            margin-bottom: 2rem;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: none;
+        }
+        .card-header {
+            background-color: #f1f8ff;
+            font-weight: 600;
+        }
+        canvas { 
+            margin: 1.5rem 0; 
+            max-height: 400px;
+        }
+        .formula-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .param-controls {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .param-slider {
+            width: 100%;
+        }
+        .example-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+        }
+        .tabs-container {
+            margin-bottom: 1.5rem;
+        }
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        .highlight {
+            background-color: #e6f3ff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center mb-4">Simulador Interactivo de Distribuciones de Probabilidad</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Gráfico de la Distribución</div>
+                <div class="card-body">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Controles</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="distributionSelect" class="form-label">Selecciona una distribución:</label>
+                        <select class="form-select" id="distributionSelect" onchange="mostrarDescripcion()">
+                            <option value="uniform">Distribución Uniforme</option>
+                            <option value="gaussian">Distribución Normal (Gaussiana)</option>
+                            <option value="exponential">Distribución Exponencial</option>
+                            <option value="bernoulli">Distribución Bernoulli</option>
+                            <option value="binomial">Distribución Binomial</option>
+                            <option value="neg_binomial">Distribución Binomial Negativa</option>
+                            <option value="gamma">Distribución Gamma</option>
+                            <option value="poisson">Distribución Poisson</option>
+                            <option value="geometric">Distribución Geométrica</option>
+                            <option value="hypergeometric">Distribución Hipergeométrica</option>
+                        </select>
+                    </div>
+                    
+                    <div id="paramControls" class="param-controls">
+                        <!-- Los controles de parámetros se generarán dinámicamente -->
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="generarDistribucion()">
+                            <i class="bi bi-graph-up"></i> Generar Distribución
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="mostrarTeoria()">
+                            <i class="bi bi-book"></i> Mostrar Teoría
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">Información sobre la Distribución</div>
+        <div class="card-body">
+            <ul class="nav nav-tabs" id="infoTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="descripcion-tab" data-bs-toggle="tab" data-bs-target="#descripcion" type="button" role="tab">Descripción</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="formula-tab" data-bs-toggle="tab" data-bs-target="#formula" type="button" role="tab">Fórmula Matemática</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ejemplos-tab" data-bs-toggle="tab" data-bs-target="#ejemplos" type="button" role="tab">Casos de Uso</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="teoria-tab" data-bs-toggle="tab" data-bs-target="#teoria" type="button" role="tab">Teoría</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content p-3" id="infoTabsContent">
+                <div class="tab-pane fade show active" id="descripcion" role="tabpanel">
+                    <div id="descripcionDistribucion"></div>
+                </div>
+                <div class="tab-pane fade" id="formula" role="tabpanel">
+                    <div id="formulaDistribucion"></div>
+                </div>
+                <div class="tab-pane fade" id="ejemplos" role="tabpanel">
+                    <div id="ejemplosDistribucion"></div>
+                </div>
+                <div class="tab-pane fade" id="teoria" role="tabpanel">
+                    <div id="teoriaDistribucion"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let chart;
+    let currentDistribution = 'uniform';
+    
+    // Datos completos de cada distribución
+    const distribuciones = {
+        uniform: {
+            nombre: "Uniforme",
+            descripcion: 'La distribución uniforme describe eventos donde todos los resultados posibles tienen la misma probabilidad de ocurrir. En su forma continua, cualquier valor dentro de un intervalo [a, b] tiene igual densidad de probabilidad.',
+            formula: '\\[ f(x) = \\begin{cases} \\frac{1}{b-a} & \\text{para } a \\leq x \\leq b \\\\ 0 & \\text{para } x < a \\text{ o } x > b \\end{cases} \\]',
+            ejemplos: [
+                'Lanzamiento de un dado justo (discreto)',
+                'Selección aleatoria de un punto en un intervalo (continuo)',
+                'Tiempo de espera para un autobús que pasa exactamente cada 15 minutos'
+            ],
+            teoria: 'La distribución uniforme es la más simple de todas las distribuciones. Representa situaciones donde no hay preferencia por ningún resultado particular. En su versión continua, el área bajo la curva entre a y b debe ser 1, lo que explica el término 1/(b-a).',
+            params: [
+                { id: 'min', nombre: 'Mínimo (a)', valor: 0, min: -10, max: 10, step: 0.1 },
+                { id: 'max', nombre: 'Máximo (b)', valor: 1, min: 0.1, max: 20, step: 0.1 }
+            ]
+        },
+        gaussian: {
+            nombre: "Normal (Gaussiana)",
+            descripcion: 'La distribución normal, también llamada campana de Gauss, es la distribución de probabilidad más importante en estadística. Muchos fenómenos naturales siguen esta distribución, que es simétrica alrededor de su media.',
+            formula: '\\[ f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{1}{2}\\left(\\frac{x-\\mu}{\\sigma}\\right)^2} \\]',
+            ejemplos: [
+                'Altura de las personas en una población',
+                'Errores de medición en experimentos científicos',
+                'Puntuaciones de CI en una población grande'
+            ],
+            teoria: 'La distribución normal es fundamental en estadística debido al Teorema del Límite Central, que establece que las medias de muestras grandes de cualquier distribución tienden a ser normales. Tiene dos parámetros: μ (media) que determina su centro y σ (desviación estándar) que determina su dispersión.',
+            params: [
+                { id: 'mean', nombre: 'Media (μ)', valor: 0, min: -10, max: 10, step: 0.1 },
+                { id: 'stddev', nombre: 'Desviación (σ)', valor: 1, min: 0.1, max: 5, step: 0.1 }
+            ]
+        },
+        exponential: {
+            nombre: "Exponencial",
+            descripcion: 'La distribución exponencial modela el tiempo entre eventos en un proceso de Poisson, donde los eventos ocurren de forma continua e independiente a una tasa constante.',
+            formula: '\\[ f(x) = \\lambda e^{-\\lambda x} \\text{ para } x \\geq 0 \\]',
+            ejemplos: [
+                'Tiempo entre llegadas de clientes a un banco',
+                'Vida útil de componentes electrónicos',
+                'Tiempo entre terremotos en una región'
+            ],
+            teoria: 'La distribución exponencial tiene la propiedad de "falta de memoria", lo que significa que la probabilidad de que un evento ocurra en el futuro no depende de cuánto tiempo haya pasado desde el último evento. Es el equivalente continuo de la distribución geométrica.',
+            params: [
+                { id: 'lambda', nombre: 'Tasa (λ)', valor: 1, min: 0.1, max: 5, step: 0.1 }
+            ]
+        },
+        bernoulli: {
+            nombre: "Bernoulli",
+            descripcion: 'La distribución Bernoulli es la distribución discreta más simple, que describe un experimento con exactamente dos resultados posibles: "éxito" (1) y "fracaso" (0).',
+            formula: '\\[ P(X=k) = \\begin{cases} p & \\text{si } k=1 \\\\ 1-p & \\text{si } k=0 \\end{cases} \\]',
+            ejemplos: [
+                'Lanzamiento de una moneda (cara o cruz)',
+                'Resultado de un partido (ganar o perder)',
+                'Respuesta a una pregunta de sí/no'
+            ],
+            teoria: 'Es la base para otras distribuciones como la binomial. Tiene un solo parámetro p que representa la probabilidad de éxito. La media es p y la varianza es p(1-p).',
+            params: [
+                { id: 'p', nombre: 'Prob. éxito (p)', valor: 0.5, min: 0, max: 1, step: 0.01 }
+            ]
+        },
+        binomial: {
+            nombre: "Binomial",
+            descripcion: 'La distribución binomial cuenta el número de éxitos en una secuencia de n ensayos de Bernoulli independientes, cada uno con probabilidad de éxito p.',
+            formula: '\\[ P(X=k) = \\binom{n}{k} p^k (1-p)^{n-k} \\]',
+            ejemplos: [
+                'Número de caras en 10 lanzamientos de moneda',
+                'Número de respuestas correctas en un test de opción múltiple',
+                'Número de piezas defectuosas en un lote de producción'
+            ],
+            teoria: 'La binomial surge de la suma de n variables Bernoulli independientes. Cuando n es grande y p no está cerca de 0 o 1, puede aproximarse por una distribución normal (Teorema de De Moivre-Laplace).',
+            params: [
+                { id: 'n', nombre: 'Ensayos (n)', valor: 10, min: 1, max: 100, step: 1 },
+                { id: 'p', nombre: 'Prob. éxito (p)', valor: 0.5, min: 0, max: 1, step: 0.01 }
+            ]
+        },
+        neg_binomial: {
+            nombre: "Binomial Negativa",
+            descripcion: 'La distribución binomial negativa cuenta el número de ensayos de Bernoulli necesarios para obtener un número determinado de éxitos (r).',
+            formula: '\\[ P(X=k) = \\binom{k-1}{r-1} p^r (1-p)^{k-r} \\text{ para } k = r, r+1, r+2, ... \\]',
+            ejemplos: [
+                'Número de lanzamientos de moneda hasta obtener 3 caras',
+                'Número de pacientes a tratar hasta encontrar 5 que respondan al tratamiento',
+                'Número de intentos hasta acertar 10 veces en un juego'
+            ],
+            teoria: 'Generaliza la distribución geométrica (que es el caso especial cuando r=1). Si r es grande, puede aproximarse por una distribución normal. Es útil para modelar datos de recuento con sobredispersión (varianza mayor que la media).',
+            params: [
+                { id: 'r', nombre: 'Éxitos (r)', valor: 5, min: 1, max: 20, step: 1 },
+                { id: 'p', nombre: 'Prob. éxito (p)', valor: 0.5, min: 0, max: 1, step: 0.01 }
+            ]
+        },
+        gamma: {
+            nombre: "Gamma",
+            descripcion: 'La distribución gamma modela el tiempo hasta que ocurren α eventos en un proceso de Poisson. Generaliza la distribución exponencial (que es el caso cuando α=1).',
+            formula: '\\[ f(x) = \\frac{\\beta^\\alpha}{\\Gamma(\\alpha)} x^{\\alpha-1} e^{-\\beta x} \\text{ para } x > 0 \\]',
+            ejemplos: [
+                'Tiempo hasta que fallan 5 componentes electrónicos',
+                'Cantidad de lluvia acumulada en una cuenca',
+                'Tiempo de espera total para α clientes en un banco'
+            ],
+            teoria: 'La distribución gamma tiene dos parámetros: α (forma) que determina el número de eventos y β (tasa). Γ(α) es la función gamma, que generaliza el factorial (Γ(n) = (n-1)! para enteros). La suma de variables exponenciales independientes sigue una gamma.',
+            params: [
+                { id: 'alpha', nombre: 'Forma (α)', valor: 2, min: 0.1, max: 10, step: 0.1 },
+                { id: 'beta', nombre: 'Tasa (β)', valor: 2, min: 0.1, max: 5, step: 0.1 }
+            ]
+        },
+        poisson: {
+            nombre: "Poisson",
+            descripcion: 'La distribución Poisson modela el número de eventos que ocurren en un intervalo fijo de tiempo o espacio, cuando estos eventos ocurren con una tasa media conocida e independientemente del tiempo desde el último evento.',
+            formula: '\\[ P(X=k) = \\frac{\\lambda^k e^{-\\lambda}}{k!} \\]',
+            ejemplos: [
+                'Número de llamadas a un call center por hora',
+                'Número de errores de impresión por página',
+                'Número de estrellas en un volumen dado de espacio'
+            ],
+            teoria: 'La distribución Poisson es el límite de la binomial cuando n tiende a infinito y p tiende a 0, con np=λ constante. La media y la varianza son iguales a λ. Para λ grande (>10), puede aproximarse por una normal.',
+            params: [
+                { id: 'lambda', nombre: 'Tasa (λ)', valor: 4, min: 0.1, max: 20, step: 0.1 }
+            ]
+        },
+        geometric: {
+            nombre: "Geométrica",
+            descripcion: 'La distribución geométrica cuenta el número de ensayos de Bernoulli necesarios para obtener el primer éxito.',
+            formula: '\\[ P(X=k) = (1-p)^{k-1} p \\text{ para } k = 1, 2, 3, ... \\]',
+            ejemplos: [
+                'Número de lanzamientos de moneda hasta obtener la primera cara',
+                'Número de intentos hasta que un jugador anota su primer gol',
+                'Número de componentes probados hasta encontrar el primero defectuoso'
+            ],
+            teoria: 'Es el caso especial de la binomial negativa con r=1. Tiene la propiedad de "falta de memoria" (como la exponencial). La media es 1/p y la varianza es (1-p)/p². Modela procesos donde se espera un evento raro.',
+            params: [
+                { id: 'p', nombre: 'Prob. éxito (p)', valor: 0.5, min: 0, max: 1, step: 0.01 }
+            ]
+        },
+        hypergeometric: {
+            nombre: "Hipergeométrica",
+            descripcion: 'La distribución hipergeométrica describe la probabilidad de k éxitos en n extracciones sin reemplazo de una población finita que contiene K éxitos y N-K fracasos.',
+            formula: '\\[ P(X=k) = \\frac{\\binom{K}{k} \\binom{N-K}{n-k}}{\\binom{N}{n}} \\]',
+            ejemplos: [
+                'Número de mujeres en un comité seleccionado de un grupo',
+                'Número de piezas defectuosas en una muestra de producción',
+                'Número de ases al repartir 5 cartas de una baraja'
+            ],
+            teoria: 'Difiere de la binomial en que las extracciones son sin reemplazo (dependientes). Cuando N es grande respecto a n, se aproxima a la binomial. La media es nK/N y la varianza incluye un factor de corrección para poblaciones finitas.',
+            params: [
+                { id: 'N', nombre: 'Población (N)', valor: 20, min: 1, max: 100, step: 1 },
+                { id: 'K', nombre: 'Éxitos (K)', valor: 7, min: 0, max: 100, step: 1 },
+                { id: 'n', nombre: 'Muestra (n)', valor: 5, min: 1, max: 100, step: 1 }
+            ]
+        }
+    };
+    
+    // Mostrar descripción y controles al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+        mostrarDescripcion();
+        generarDistribucion();
+    });
+    
+    function mostrarDescripcion() {
+        currentDistribution = document.getElementById('distributionSelect').value;
+        const dist = distribuciones[currentDistribution];
+        
+        // Actualizar descripción
+        document.getElementById('descripcionDistribucion').innerHTML = `
+            <h4>Distribución ${dist.nombre}</h4>
+            <p>${dist.descripcion}</p>
+            <p><strong>Media:</strong> <span id="mediaTeorica">Calculando...</span></p>
+            <p><strong>Varianza:</strong> <span id="varianzaTeorica">Calculando...</span></p>
+        `;
+        
+        // Actualizar fórmula
+        document.getElementById('formulaDistribucion').innerHTML = `
+            <h4>Función de Probabilidad</h4>
+            <div class="formula-card">${dist.formula}</div>
+            <p id="formulaDescripcion"></p>
+        `;
+        
+        // Actualizar ejemplos
+        document.getElementById('ejemplosDistribucion').innerHTML = `
+            <h4>Ejemplos de Aplicación</h4>
+            <ul>
+                ${dist.ejemplos.map(e => `<li>${e}</li>`).join('')}
+            </ul>
+        `;
+        
+        // Actualizar teoría
+        document.getElementById('teoriaDistribucion').innerHTML = `
+            <h4>Propiedades y Teoría</h4>
+            <p>${dist.teoria}</p>
+        `;
+        
+        // Actualizar controles de parámetros
+        const paramControls = document.getElementById('paramControls');
+        paramControls.innerHTML = '<h5>Parámetros de la Distribución</h5>';
+        
+        dist.params.forEach(param => {
+            paramControls.innerHTML += `
+                <div class="mb-3">
+                    <label for="${param.id}" class="form-label">${param.nombre}</label>
+                    <input type="range" class="form-range param-slider" id="${param.id}" 
+                           min="${param.min}" max="${param.max}" step="${param.step}" 
+                           value="${param.valor}" oninput="updateParamValue('${param.id}', this.value)">
+                    <div class="d-flex justify-content-between">
+                        <small>${param.min}</small>
+                        <span id="${param.id}Value">${param.valor}</span>
+                        <small>${param.max}</small>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Renderizar fórmulas matemáticas
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+    
+    function updateParamValue(id, value) {
+        document.getElementById(`${id}Value`).textContent = value;
+    }
+    
+    function getCurrentParams() {
+        const dist = distribuciones[currentDistribution];
+        const params = {};
+        
+        dist.params.forEach(param => {
+            params[param.id] = parseFloat(document.getElementById(param.id).value);
+        });
+        
+        return params;
+    }
+    
+    function generarDistribucion() {
+        const params = getCurrentParams();
+        let data = [];
+        const sampleSize = 1000; // Aumentamos el tamaño de la muestra para mejores gráficos
+        
+        switch (currentDistribution) {
+            case 'uniform':
+                for (let i = 0; i < sampleSize; i++) {
+                    data.push(params.min + Math.random() * (params.max - params.min));
+                }
+                break;
+                
+            case 'gaussian':
+                for (let i = 0; i < sampleSize; i++) {
+                    let u = 0, v = 0;
+                    while(u === 0) u = Math.random();
+                    while(v === 0) v = Math.random();
+                    data.push(params.mean + params.stddev * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v));
+                }
+                break;
+                
+            case 'exponential':
+                for (let i = 0; i < sampleSize; i++) {
+                    data.push(-Math.log(1 - Math.random()) / params.lambda);
+                }
+                break;
+                
+            case 'bernoulli':
+                for (let i = 0; i < sampleSize; i++) {
+                    data.push(Math.random() < params.p ? 1 : 0);
+                }
+                break;
+                
+            case 'binomial':
+                for (let i = 0; i < sampleSize; i++) {
+                    let count = 0;
+                    for (let j = 0; j < params.n; j++) {
+                        if (Math.random() < params.p) count++;
+                    }
+                    data.push(count);
+                }
+                break;
+                
+            case 'neg_binomial':
+                for (let i = 0; i < sampleSize; i++) {
+                    let r = params.r;
+                    let count = 0;
+                    while (r > 0) {
+                        count++;
+                        if (Math.random() < params.p) r--;
+                    }
+                    data.push(count);
+                }
+                break;
+                
+            case 'gamma':
+                for (let i = 0; i < sampleSize; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < params.alpha; j++) {
+                        sum += -Math.log(1 - Math.random());
+                    }
+                    data.push(sum / params.beta);
+                }
+                break;
+                
+            case 'poisson':
+                for (let i = 0; i < sampleSize; i++) {
+                    let L = Math.exp(-params.lambda);
+                    let k = 0;
+                    let p = 1;
+                    do {
+                        k++;
+                        p *= Math.random();
+                    } while (p > L);
+                    data.push(k - 1);
+                }
+                break;
+                
+            case 'geometric':
+                for (let i = 0; i < sampleSize; i++) {
+                    let k = 1;
+                    while (Math.random() > params.p) {
+                        k++;
+                    }
+                    data.push(k);
+                }
+                break;
+                
+            case 'hypergeometric':
+                for (let i = 0; i < sampleSize; i++) {
+                    let success = 0;
+                    // Creamos una población virtual
+                    let population = [];
+                    for (let j = 0; j < params.N; j++) {
+                        population.push(j < params.K ? 1 : 0);
+                    }
+                    // Mezclamos
+                    for (let j = population.length - 1; j > 0; j--) {
+                        const k = Math.floor(Math.random() * (j + 1));
+                        [population[j], population[k]] = [population[k], population[j]];
+                    }
+                    // Tomamos muestra
+                    for (let j = 0; j < params.n; j++) {
+                        if (population[j] === 1) success++;
+                    }
+                    data.push(success);
+                }
+                break;
+        }
+        
+        // Calcular estadísticas descriptivas
+        const mean = data.reduce((a, b) => a + b, 0) / data.length;
+        const variance = data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length;
+        
+        // Actualizar estadísticas teóricas
+        document.getElementById('mediaTeorica').textContent = mean.toFixed(4);
+        document.getElementById('varianzaTeorica').textContent = variance.toFixed(4);
+        
+        // Crear histograma
+        const minVal = Math.min(...data);
+        const maxVal = Math.max(...data);
+        const numBins = currentDistribution === 'bernoulli' ? 2 : 20;
+        const binSize = (maxVal - minVal) / numBins;
+        
+        const bins = Array(numBins).fill(0);
+        const labels = [];
+        
+        for (let i = 0; i < numBins; i++) {
+            const binStart = minVal + i * binSize;
+            const binEnd = binStart + binSize;
+            labels.push(`${binStart.toFixed(1)}-${binEnd.toFixed(1)}`);
+        }
+        
+        data.forEach(value => {
+            let binIndex;
+            if (currentDistribution === 'bernoulli') {
+                binIndex = value;
+            } else {
+                binIndex = Math.min(Math.floor((value - minVal) / binSize), numBins - 1);
+            }
+            bins[binIndex]++;
+        });
+        
+        // Normalizar para que el área sea 1 (opcional)
+        // const total = bins.reduce((a, b) => a + b, 0);
+        // bins = bins.map(b => b / total);
+        
+        // Crear o actualizar gráfico
+        const ctx = document.getElementById('distributionChart').getContext('2d');
+        
+        if (chart) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = bins;
+            chart.update();
+        } else {
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frecuencia',
+                        data: bins,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Distribución ${distribuciones[currentDistribution].nombre}`,
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Frecuencia: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { 
+                                display: true, 
+                                text: 'Frecuencia',
+                                font: { weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            title: { 
+                                display: true, 
+                                text: 'Valor',
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function mostrarTeoria() {
+        // Activar la pestaña de teoría
+        const teoriaTab = new bootstrap.Tab(document.getElementById('teoria-tab'));
+        teoriaTab.show();
+    }
+</script>
+</body>
+</html>
